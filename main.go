@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	pin = rpio.Pin(22)
+	waterStations = []int{24,25}
 )
 
 func main() {
@@ -22,14 +22,30 @@ func main() {
 	// Unmap gpio memory when done
 	defer rpio.Close()
 
-	// Set pin to output mode
-	pin.Output()
+	// sprinkler
+	turnOn(waterStations, 5, 1)
 
-	// Toggle pin 20 times
-	for x := 0; x < 20; x++ {
-		pin.Toggle()
-		time.Sleep(time.Second / 5)
+	// garage
+	toggle(24, 5)
+
+}
+
+func turnOn(pins []int, min time.Duration, sleep time.Duration) {
+	for _, v := range pins {
+		pin := rpio.Pin(v)
+		pin.Output()
+		pin.Low()
+		time.Sleep(time.Minute*min)
+		pin.High()
+		time.Sleep(time.Minute*sleep)
 	}
+}
 
+func toggle(pinNo int, sec time.Duration) {
+	pin := rpio.Pin(pinNo)
+	pin.Output()
+	pin.Low()
+	time.Sleep(time.Second*sec)
+	pin.High()
 }
 
