@@ -12,6 +12,7 @@ import (
   "strconv"
   "sync"
   "time"
+  "strings"
 )
 
 var (
@@ -98,7 +99,7 @@ func garage(w http.ResponseWriter, r *http.Request) {
 func auth(r *http.Request) bool {
   session, _ := store.Get(r, cookieName)
   if auth, ok := session.Values[sessionName].(string); !ok || (auth != webkey) {
-    fmt.Printf("auth=%s|webkey=%s\n", auth, webkey)
+    log.Printf("auth=%s|webkey=%s\n", auth, webkey)
     return false
   }
   return true
@@ -106,8 +107,16 @@ func auth(r *http.Request) bool {
 
 func ctrl(w http.ResponseWriter, r *http.Request) {
   if !auth(r) {
-    http.Error(w, "Forbidden", http.StatusForbidden)
-    return
+	log.Printf("r.RemoteAddr:%s", r.RemoteAddr)
+	// strings.Split guarantees it returns at least one element array
+	// so no need to check null
+	remote_ip := strings.Split(r.RemoteAddr, ":")
+    if (remote_ip[0] == "192.168.1.1") {
+      login(w, r)
+	} else {
+      http.Error(w, "Forbidden", http.StatusForbidden)
+      return
+   }
   }
   gIndexHtmlFile.write(w)
   // flush output buffer
@@ -138,7 +147,7 @@ func main() {
   r := mux.NewRouter()
 
   r.HandleFunc("/ctrl", ctrl)
-  r.HandleFunc("/login", login)
+  //r.HandleFunc("/login", login)
   r.HandleFunc("/logout", logout)
   r.HandleFunc("/sprinkler", sprinkler)
   r.HandleFunc("/garage", garage)
